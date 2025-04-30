@@ -13,7 +13,7 @@ export default defineConfig((options) => {
 		clean: true,
 		splitting: false,
 		minify: !dev,
-		external: [...Object.keys(peerDependencies)],
+		external: [...Object.keys(peerDependencies), "fs", "path", "@babel/core", "babel-plugin-transform-rewrite-imports"],
 		tsconfig: "tsconfig.json",
 	};
 });

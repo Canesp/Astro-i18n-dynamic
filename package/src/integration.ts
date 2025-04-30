@@ -1,87 +1,88 @@
-import { defineIntegration } from "astro-integration-kit";
-import chokidar, { FSWatcher } from "chokidar";
-import path from "path";
-import { z } from "zod";
-import { generateVirtualPages } from "./utils/virtualPages.js";
+import type { AstroIntegration } from "astro";
+import type { Plugin } from "vite";
+import { fileURLToPath, pathToFileURL } from "url";
+import { join } from "path";
+import { existsSync, mkdirSync, rmSync, cpSync } from "fs";
+import { mirrorChange, generateLanguageFolders } from "./utils/fileUtils.ts";
 
 
-const OptionsSchema = z.object({
-	supportedLocales: z.array(z.string()).min(1),
-	defaultLocale: z.string(),
-	includeDefaultLocale: z.boolean().optional().default(false),
-	translationMap: z.record(z.record(z.string())).optional().default({}),
-});
+export interface I18nOptions {
+	supportedLocales?: string[];
+	defaultLocale?: string;
+	includeDefaultLocale?: boolean;
+	translationMap?: Record<string, Record<string, string>>;
+}
 
 
-export default defineIntegration({
-	name: "astro-i18n-dynamic",
-	optionsSchema: OptionsSchema,
+export default function i18nIntegration({ supportedLocales = [], defaultLocale = "en", includeDefaultLocale = false, translationMap = {} }: I18nOptions = {}): AstroIntegration {
+	let tempSrc: string;
 
-	setup({ options }) {
-		let watcher: FSWatcher | null = null;
-
+	function viteI18nPlugin(): Plugin {
 		return {
-			hooks: {
-				"astro:config:setup": async (hookParams) =>  {
-					const { supportedLocales, defaultLocale, includeDefaultLocale, translationMap } = options;
-					const { config, logger } = hookParams;
-	
-					const pagesDir = path.resolve(config.srcDir.pathname, "pages");
-					logger.info(`[astro-i18n-dynamic] Watching pages: ${pagesDir}`);
-	
-					// Initial virtual page generation.
-					await generateVirtualPages({ ...hookParams, supportedLocales, defaultLocale, includeDefaultLocale, translationMap }); 
-	
-					// Watch for changes in pages/.
-					watcher = chokidar.watch(pagesDir, { ignoreInitial: true, ignored: "/(^|[\/\])\../" });
-					watcher.on("all", async (event, filePath) => {
-						logger.info(`[astro-i18n-dynamic] ${event} at ${filePath}`);
-						await generateVirtualPages({ ...hookParams, supportedLocales, defaultLocale, includeDefaultLocale, translationMap }); 
-					});
-				},
-	
-				"astro:build:done": async ({ logger }) => {
-					if (watcher) {
-						await watcher.close();
-						logger.info("[astro-i18n-dynamic] Watcher closed");
-					}
-				}
+			name: "vite:astro-i18n-dynamic",
+			configureServer(server) {
+				const originalSrc = join(server.config.root, "src");
+				tempSrc = join(originalSrc, "..", "src_temp");
+
+				server.watcher.add(originalSrc);
+				server.watcher.on("all", (_event, changed) => {
+					mirrorChange(originalSrc, tempSrc, supportedLocales, defaultLocale, includeDefaultLocale, translationMap, changed);
+				});
 			}
 		};
 	}
-})
 
-/* export default function astroI18nDynamic(rawOptions: Partial<IntegrationOptions> = {}) {
-	const { supportedLocales, defaultLocale, includeDefaultLocale, translationMap } = OptionsSchema.parse(rawOptions); 
 
-	let watcher: FSWatcher | null = null;
-
-	return defineIntegration({
+	return {
 		name: "astro-i18n-dynamic",
 		hooks: {
-			"astro:config:setup": async (hookParams: HookParameters<"astro:config:setup">) =>  {
-				const { config, logger } = hookParams;
+			"astro:config:setup": ({ updateConfig, config, logger}) => {
+				logger.info("Setting up i18n integration...");
+				const originalSrc = fileURLToPath(config.srcDir);
+				tempSrc = join(process.cwd(), "src_temp");
 
-				const pagesDir = path.resolve(config.srcDir.pathname, "pages");
-				logger.info(`[astro-i18n-dynamic] Watching pages: ${pagesDir}`);
+				if (existsSync(tempSrc)) {
+					rmSync(tempSrc, { recursive: true, force: true });
+				}
 
-				// Initial virtual page generation.
-				await generateVirtualPages({ ...hookParams, supportedLocales, defaultLocale, includeDefaultLocale, translationMap }); 
+				cpSync(originalSrc, tempSrc, { recursive: true });
+				mkdirSync(join(tempSrc, "pages"), { recursive: true });	
 
-				// Watch for changes in pages/.
-				watcher = chokidar.watch(pagesDir, { ignoreInitial: true, ignored: "/(^|[\/\])\../" });
-				watcher.on("all", async (event, filePath) => {
-					logger.info(`[astro-i18n-dynamic] ${event} at ${filePath}`);
-					await generateVirtualPages({ ...hookParams, supportedLocales, defaultLocale, includeDefaultLocale, translationMap }); 
+				generateLanguageFolders(join(tempSrc, "pages"), supportedLocales, defaultLocale, includeDefaultLocale, translationMap);
+				
+				const tempURL = pathToFileURL(tempSrc + "/");
+
+				logger.info(`tempURL.href = ${tempURL.href}`);
+				logger.info(`tempURL.protocol = ${tempURL.protocol}`);
+
+				updateConfig({
+					srcDir: new URL(tempURL.href),
+					vite: {
+						plugins: [viteI18nPlugin()]
+					}
 				});
 			},
 
-			"astro:build:done": async ({ logger }) => {
-				if (watcher) {
-					await watcher.close();
-					logger.info("[astro-i18n-dynamic] Watcher closed");
+
+			"astro:build:generated": ({ logger }) => {
+				logger.info(`Build complete; cleaning up src_temp…`);
+
+				if (existsSync(tempSrc)) {
+					rmSync(tempSrc, { recursive: true, force: true });
 				}
+			},
+
+
+			"astro:build:done": ({ logger }) => {
+				if (existsSync(tempSrc)) {
+					rmSync(tempSrc, { recursive: true, force: true });
+				}
+
+				logger.info("i18n temp directory removed");
 			}
 		}
-	})
-} */
+	}
+}
+
+
+// astro-i18n-dynamic

@@ -45,9 +45,11 @@
 	"devDependencies": {
 		"@babel/core": "^7.26.10",
 		"@babel/preset-typescript": "^7.27.0",
+		"@types/babel__core": "^7.20.5",
 		"@types/node": "^18.19.87",
 		"babel-plugin-transform-rewrite-imports": "^1.5.3",
 		"tsup": "^8.4.0",
-		"typescript": "^5.8.3"
+		"typescript": "^5.8.3",
+		"vite": "^6.3.3"
 	}
 }

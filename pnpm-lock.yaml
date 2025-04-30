@@ -39,6 +39,9 @@ importers:
       '@babel/preset-typescript':
         specifier: ^7.27.0
         version: 7.27.0(@babel/core@7.26.10)
+      '@types/babel__core':
+        specifier: ^7.20.5
+        version: 7.20.5
       '@types/node':
         specifier: ^18.19.87
         version: 18.19.87
@@ -51,6 +54,9 @@ importers:
       typescript:
         specifier: ^5.8.3
         version: 5.8.3
+      vite:
+        specifier: ^6.3.3
+        version: 6.3.3(@types/node@18.19.87)(jiti@2.4.2)(lightningcss@1.29.2)(yaml@2.7.1)
 
   playground:
     dependencies:
@@ -918,6 +924,18 @@ packages:
     resolution: {integrity: sha512-4UQeMrONbvrsXKXXp/uxmdEN5JIJ9RkH7YVzs6AMxC/KC1+Np7WZBaNIco7TEjlkthqxZbt8pU/ipD+hKjm80A==}
     peerDependencies:
       vite: ^5.2.0 || ^6
+
+  '@types/babel__core@7.20.5':
+    resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
+
+  '@types/babel__generator@7.27.0':
+    resolution: {integrity: sha512-ufFd2Xi92OAVPYsy+P4n7/U7e68fex0+Ee8gSG9KX7eo084CWiQ4sdxktvdl0bOPupXtVJPY19zk6EwWqUQ8lg==}
+
+  '@types/babel__template@7.4.4':
+    resolution: {integrity: sha512-h/NUaSyG5EyxBIp8YRxo4RMe2/qQgvyowRwVMzhYhBCONbW8PUsg4lkFMrhgZhUe5z3L3MiLDuvyJ/CaPa2A8A==}
+
+  '@types/babel__traverse@7.20.7':
+    resolution: {integrity: sha512-dkO5fhS7+/oos4ciWxyEyjWe48zmG6wbCheo/G2ZnHx4fs3EU6YC6UM8rk56gAjNJ9P3MTH2jo5jb92/K6wbng==}
 
   '@types/debug@4.1.12':
     resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
@@ -3644,6 +3662,27 @@ snapshots:
       '@tailwindcss/oxide': 4.1.4
       tailwindcss: 4.1.4
       vite: 6.3.3(@types/node@22.15.2)(jiti@2.4.2)(lightningcss@1.29.2)(yaml@2.7.1)
+
+  '@types/babel__core@7.20.5':
+    dependencies:
+      '@babel/parser': 7.27.0
+      '@babel/types': 7.27.0
+      '@types/babel__generator': 7.27.0
+      '@types/babel__template': 7.4.4
+      '@types/babel__traverse': 7.20.7
+
+  '@types/babel__generator@7.27.0':
+    dependencies:
+      '@babel/types': 7.27.0
+
+  '@types/babel__template@7.4.4':
+    dependencies:
+      '@babel/parser': 7.27.0
+      '@babel/types': 7.27.0
+
+  '@types/babel__traverse@7.20.7':
+    dependencies:
+      '@babel/types': 7.27.0
 
   '@types/debug@4.1.12':
     dependencies:

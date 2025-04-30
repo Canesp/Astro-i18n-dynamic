@@ -2,3 +2,9 @@ packages:
   - package
   - packages/*
   - playground
+
+ignoredBuiltDependencies:
+  - '@biomejs/biome'
+  - core-js
+  - esbuild
+  - sharp
