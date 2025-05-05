@@ -2,8 +2,9 @@ import type { AstroIntegration } from "astro";
 import type { Plugin } from "vite";
 import { fileURLToPath, pathToFileURL } from "url";
 import { join } from "path";
-import { existsSync, mkdirSync, rmSync, cpSync } from "fs";
-import { mirrorChange, generateLanguageFolders } from "./utils/fileUtils.ts";
+import { existsSync, rmSync } from "fs";
+/* import { mirrorChange, generateLanguageFolders } from "./utils/fileUtils.ts"; */
+import { handleFileChange, initTempSrc } from "./utils/fileUtils.ts";
 
 
 export interface I18nOptions {
@@ -24,9 +25,11 @@ export default function i18nIntegration({ supportedLocales = [], defaultLocale =
 				const originalSrc = join(server.config.root, "src");
 				tempSrc = join(originalSrc, "..", "src_temp");
 
+				initTempSrc(originalSrc, tempSrc, supportedLocales, defaultLocale, includeDefaultLocale, translationMap);
+
 				server.watcher.add(originalSrc);
-				server.watcher.on("all", (_event, changed) => {
-					mirrorChange(originalSrc, tempSrc, supportedLocales, defaultLocale, includeDefaultLocale, translationMap, changed);
+				server.watcher.on("all", (event, changed) => {
+					handleFileChange(event, changed, originalSrc, tempSrc, supportedLocales, defaultLocale, includeDefaultLocale, translationMap)
 				});
 			}
 		};
@@ -39,24 +42,10 @@ export default function i18nIntegration({ supportedLocales = [], defaultLocale =
 			"astro:config:setup": ({ updateConfig, config, logger}) => {
 				logger.info("Setting up i18n integration...");
 				const originalSrc = fileURLToPath(config.srcDir);
-				tempSrc = join(process.cwd(), "src_temp");
-
-				if (existsSync(tempSrc)) {
-					rmSync(tempSrc, { recursive: true, force: true });
-				}
-
-				cpSync(originalSrc, tempSrc, { recursive: true });
-				mkdirSync(join(tempSrc, "pages"), { recursive: true });	
-
-				generateLanguageFolders(join(tempSrc, "pages"), supportedLocales, defaultLocale, includeDefaultLocale, translationMap);
-				
-				const tempURL = pathToFileURL(tempSrc + "/");
-
-				logger.info(`tempURL.href = ${tempURL.href}`);
-				logger.info(`tempURL.protocol = ${tempURL.protocol}`);
+				tempSrc = initTempSrc(originalSrc, undefined, supportedLocales, defaultLocale, includeDefaultLocale, translationMap);
 
 				updateConfig({
-					srcDir: new URL(tempURL.href),
+					srcDir: pathToFileURL(tempSrc + "/"),
 					vite: {
 						plugins: [viteI18nPlugin()]
 					}
